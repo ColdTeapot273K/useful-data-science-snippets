@@ -131,3 +131,76 @@ except Exception as e:
     print("Oops!", e.__class__, "occurred.")
 else:
     print("tests passed!")
+
+# %%
+
+# INFO: Modeling utilities
+
+
+def _split_Xy(Xy, target: str = None):
+
+    Xy = Xy
+    X = Xy.drop(columns=target)
+    y = Xy[target]
+
+    return X, y
+
+
+def _mape(y_true, y_pred):
+    mape = np.mean(abs((y_true - y_pred) / (y_true + np.finfo(float).eps))) * 100
+    return mape
+
+
+def _smape(y_true, y_pred):
+    smape = np.mean(
+        (np.abs(y_pred - y_true) * 200 / (np.abs(y_pred) + np.abs(y_true) + np.finfo(float).eps))
+    )  # .fillna(0))
+    return smape
+
+
+def _eval_regression_metrics(y_true, y_pred):
+    """
+    Pass series/array, not df
+
+    use **kwargs to pass additional metrics TODO: implement kwargs
+    """
+
+    from sklearn.metrics import mean_absolute_error
+    from sklearn.metrics import mean_squared_error
+    from sklearn.metrics import mean_squared_log_error
+    from sklearn.metrics import median_absolute_error
+    from sklearn.metrics import explained_variance_score
+
+    evals = {
+        "MAE": round(mean_absolute_error(y_true, y_pred), 3),
+        "MSE": round(mean_squared_error(y_true, y_pred), 3),
+        "RMSE": round(mean_squared_error(y_true, y_pred, squared=False), 3),
+        #              'MSLE': mean_squared_log_error(y_true, y_pred),
+        "MAD": round(median_absolute_error(y_true, y_pred), 3),
+        "Explained variation": round(explained_variance_score(y_true, y_pred), 3),
+        "SMAPE": round(_smape(y_true, y_pred), 3),  # non applicable for negative/0/nan values
+        "MAPE": round(_mape(y_true, y_pred), 3),
+    }
+
+    return evals
+
+
+def _create_apply_transformers(df):
+    from sklearn_pandas import DataFrameMapper
+    import category_encoders as ce
+
+    data_raw = df
+
+    obj_cols = data_raw.select_dtypes("object").columns.to_list()
+
+    from sklearn_pandas import gen_features
+
+    feature_def = gen_features(
+        columns=obj_cols,
+        classes=[{"class": ce.OrdinalEncoder, "handle_unknown": "return_nan", "handle_missing": "return_nan"}],
+    )
+
+    mapper = DataFrameMapper(feature_def, default=None, df_out=True)
+
+    data_transformed = mapper.fit_transform(data_raw)
+    return data_transformed, mapper
