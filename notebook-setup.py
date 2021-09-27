@@ -18,6 +18,9 @@ pd.options.display.max_columns = 500
 pd.options.display.max_rows = 500
 pd.options.display.max_colwidth = 500
 
+# INFO: to display dataframes as tables on call
+from IPython.display import display
+
 
 # INFO: Plotting setup (matplotlib is only for compatibility with legacy code)
 # import matplotlib.pyplot as plt
